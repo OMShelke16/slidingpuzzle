@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sliding Slides - Puzzle Adventure</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Orbitron', monospace;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Animated Background */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.3) 0%, transparent 50%);
+      animation: backgroundShift 15s ease-in-out infinite;
+      z-index: -1;
+    }
+
+    @keyframes backgroundShift {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      50% { transform: scale(1.1) rotate(1deg); }
+    }
+
+    /* Floating particles */
+    .particles {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 50%;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0; }
+      50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
+    }
+
+    .game-container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      animation: containerGlow 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes containerGlow {
+      from { box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37); }
+      to { box-shadow: 0 8px 32px rgba(31, 38, 135, 0.6), 0 0 20px rgba(255, 255, 255, 0.2); }
+    }
+
+    h1 {
+      color: #fff;
+      text-align: center;
+      font-size: 3rem;
+      font-weight: 900;
+      margin-bottom: 20px;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+      animation: titlePulse 2s ease-in-out infinite;
+      position: relative;
+    }
+
+    h1::after {
+      content: '🎮';
+      position: absolute;
+      top: -10px;
+      right: -40px;
+      font-size: 2rem;
+      animation: bounce 1s ease-in-out infinite;
+    }
+
+    @keyframes titlePulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .controls {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .controls label {
+      color: #fff;
+      font-weight: 700;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    }
+
+    .controls select {
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .controls select:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .grid {
+      display: grid;
+      gap: 8px;
+      margin: 20px 0;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 15px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .tile {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(145deg, #4a90e2, #357abd);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tile::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.5s;
+    }
+
+    .tile:hover::before {
+      left: 100%;
+    }
+
+    .tile:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+      background: linear-gradient(145deg, #5ba0f2, #4680cd);
+    }
+
+    .tile:active {
+      transform: translateY(-2px) scale(1.02);
+    }
+
+    .empty {
+      background: linear-gradient(145deg, #2c3e50, #34495e);
+      cursor: default;
+      border: 2px dashed rgba(255, 255, 255, 0.3);
+    }
+
+    .empty:hover {
+      transform: none;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .stats {
+      display: flex;
+      gap: 20px;
+      margin: 15px 0;
+      justify-content: center;
+    }
+
+    #timer, #moves {
+      color: #fff;
+      font-size: 18px;
+      font-weight: 700;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.1);
+      padding: 10px 15px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .buttons {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    button {
+      background: linear-gradient(145deg, #e74c3c, #c0392b);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    #timer, #moves {
+      font-size: 18px;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Sliding Puzzle</h1>
+  <div class="controls">
+    <label for="gridSize">Grid Size:</label>
+    <select id="gridSize" onchange="changeGridSize()">
+      <option value="3">3x3</option>
+      <option value="4" selected>4x4</option>
+      <option value="5">5x5</option>
+    </select>
+    <button onclick="solvePuzzle()">Visual Solve</button>
+  </div>
+
+  <div id="timer">Time: 0s</div>
+  <div id="moves">Moves: 0</div>
+  <div class="grid" id="grid"></div>
+  <div class="buttons">
+    <button onclick="shuffleTiles()">Shuffle</button>
+    <button onclick="resetGame()">Reset</button>
+    <button onclick="activateSpecialMove()">Special Move (3)</button>
+  </div>
+
+  <script>
+    const grid = document.getElementById("grid");
+    const timerDisplay = document.getElementById("timer");
+    const movesDisplay = document.getElementById("moves");
+    let gridSize = 4;
+    let tiles = [];
+    let initialState = [];
+    let specialMovesLeft = 3;
+    let specialMoveActive = false;
+    let selectedTile = null;
+    let startTime = null;
+    let timerInterval = null;
+    let moveCount = 0;
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      startTime = Date.now();
+      timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        timerDisplay.textContent = `Time: ${elapsed}s`;
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+    }
+
+    function updateMoves() {
+      movesDisplay.textContent = `Moves: ${moveCount}`;
+    }
+
+    function initTiles(size = 4) {
+      tiles = [];
+      for (let i = 1; i < size * size; i++) {
+        tiles.push(i);
+      }
+      tiles.push(null);
+      initialState = [...tiles];
+      grid.style.gridTemplateColumns = `repeat(${size}, 80px)`;
+      grid.style.gridTemplateRows = `repeat(${size}, 80px)`;
+    }
+
+    function drawGrid() {
+      grid.innerHTML = "";
+      tiles.forEach((value, index) => {
+        const tile = document.createElement("div");
+        tile.classList.add("tile");
+        if (value === null) {
+          tile.classList.add("empty");
+        } else {
+          tile.textContent = value;
+        }
+
+        tile.addEventListener("click", () => {
+          if (specialMoveActive) {
+            handleSpecialMove(index);
+          } else {
+            moveTile(index);
+          }
+        });
+
+        grid.appendChild(tile);
+      });
+    }
+
+    function moveTile(index) {
+      const emptyIndex = tiles.indexOf(null);
+      const validMoves = [
+        emptyIndex - 1,
+        emptyIndex + 1,
+        emptyIndex - gridSize,
+        emptyIndex + gridSize
+      ];
+      if (validMoves.includes(index) && isValidMove(index, emptyIndex)) {
+        [tiles[index], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[index]];
+        moveCount++;
+        updateMoves();
+        drawGrid();
+        if (checkWin()) {
+          stopTimer();
+          setTimeout(() => alert("🎉 Congratulations! You solved the puzzle! You're a true puzzle master! 🧠🔥"), 100);
+        }
+      }
+    }
+
+    function isValidMove(index, emptyIndex) {
+      const row1 = Math.floor(index / gridSize);
+      const col1 = index % gridSize;
+      const row2 = Math.floor(emptyIndex / gridSize);
+      const col2 = emptyIndex % gridSize;
+      return (row1 === row2 || col1 === col2);
+    }
+
+    function shuffleTiles() {
+      for (let i = tiles.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+      }
+      moveCount = 0;
+      updateMoves();
+      drawGrid();
+      startTimer();
+    }
+
+    function resetGame() {
+      tiles = [...initialState];
+      specialMovesLeft = 3;
+      specialMoveActive = false;
+      selectedTile = null;
+      moveCount = 0;
+      updateSpecialButton();
+      updateMoves();
+      drawGrid();
+      startTimer();
+    }
+
+    function checkWin() {
+      for (let i = 0; i < tiles.length - 1; i++) {
+        if (tiles[i] !== i + 1) return false;
+      }
+      return tiles[tiles.length - 1] === null;
+    }
+
+    function activateSpecialMove() {
+      if (specialMovesLeft > 0) {
+        specialMoveActive = true;
+        alert("Special Move Activated! Click two tiles to swap them.");
+      } else {
+        alert("No special moves left!");
+      }
+    }
+
+    function handleSpecialMove(index) {
+      if (selectedTile === null) {
+        selectedTile = index;
+      } else {
+        [tiles[selectedTile], tiles[index]] = [tiles[index], tiles[selectedTile]];
+        specialMovesLeft--;
+        specialMoveActive = false;
+        selectedTile = null;
+        updateSpecialButton();
+        drawGrid();
+        if (checkWin()) {
+          stopTimer();
+          setTimeout(() => alert("🎉 Congratulations! You solved the puzzle! You're a true puzzle master! 🧠🔥"), 100);
+        }
+      }
+    }
+
+    function updateSpecialButton() {
+      const button = document.querySelector("button[onclick='activateSpecialMove()']");
+      button.textContent = `Special Move (${specialMovesLeft})`;
+    }
+
+    function changeGridSize() {
+      gridSize = parseInt(document.getElementById("gridSize").value);
+      initTiles(gridSize);
+      moveCount = 0;
+      updateMoves();
+      drawGrid();
+      startTimer();
+    }
+
+    function solvePuzzle() {
+      tiles = [];
+      for (let i = 1; i < gridSize * gridSize; i++) {
+        tiles.push(i);
+      }
+      tiles.push(null);
+      drawGrid();
+      stopTimer();
+      alert("✨ Puzzle auto-solved!");
+    }
+
+    initTiles(gridSize);
+    drawGrid();
+    startTimer();
+    updateMoves();
+  </script>
+</body>
+</html>
